@@ -77,4 +77,14 @@ def component_index : Fin 2 → Fin 3 :=
 #eval norm_mps (AKLT_MPS ⟨2, by decide⟩)
 
 def exist_phase {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Prop := ∃ t : α, ∀ (x : (Fin N → Fin d)), (t * star t = 1) ∧ (get_component Amps x) = t * (get_component Bmps x)
+
+def apply_gauge {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (mps : Finite_MPS α N d χ) (fX fY : Fin N → Matrix (Fin χ) (Fin χ) α) : Finite_MPS α N d χ :=
+  { tensors := fun i => { data := fun j => fX i * (mps.tensors i).data j * fY i },
+    boundary_left := mps.boundary_left,
+    boundary_right := mps.boundary_right,
+    hN := mps.hN,
+    hd := mps.hd,
+    hχ := mps.hχ
+  }
+
 axiom eq_MPS {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Amps = Bmps ↔ exist_phase Amps Bmps
