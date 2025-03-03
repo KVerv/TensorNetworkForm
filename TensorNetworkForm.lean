@@ -69,9 +69,12 @@ def AKLT_MPS (N : {n : ℕ // 0 < n}) : Finite_MPS ℝ N.val 3 2 :=
 
 def component_index : Fin 2 → Fin 3 :=
   fun
-  | ⟨0,_⟩  => ⟨0, by decide⟩
-  | ⟨1,_⟩  => ⟨2, by decide⟩
-
+  | ⟨0,_⟩  => ⟨1, by decide⟩
+  | ⟨1,_⟩  => ⟨0, by decide⟩
 
 
 #eval get_component (AKLT_MPS ⟨2, by decide⟩) component_index
+#eval norm_mps (AKLT_MPS ⟨2, by decide⟩)
+
+def exist_phase {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Prop := ∃ t : α, ∀ (x : (Fin N → Fin d)), (t * star t = 1) ∧ (get_component Amps x) = t * (get_component Bmps x)
+axiom eq_MPS {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Amps = Bmps ↔ exist_phase Amps Bmps
