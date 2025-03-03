@@ -6,8 +6,10 @@ import Mathlib.Data.Matrix.Basic
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Real.Sqrt
-import Mathlib.Data.FP.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import Mathlib.Data.Complex.Exponential
 
+open BigOperators Finset
 open Matrix
 
 def sqrt2_approx : ℚ := 14142135623730950488 / 10^19
@@ -17,7 +19,7 @@ structure MPS_tensor (α : Type) (d χ : ℕ) where
   data : Fin d → Matrix (Fin χ) (Fin χ) α
 
 -- A Finite MPS with open boundary conditions and constant bond dimension.
-structure Finite_MPS (α : Type) [Semiring α] (N d χ: ℕ) where
+structure Finite_MPS (α : Type) [Ring α] [StarRing α] (N d χ: ℕ) where
   tensors : Fin N → MPS_tensor α d χ  -- N MPS tensors
   boundary_left : Matrix (Fin 1) (Fin χ) α  -- Left boundary vector (optional)
   boundary_right : Matrix (Fin χ) (Fin 1) α -- Right boundary vector (optional)
@@ -25,16 +27,21 @@ structure Finite_MPS (α : Type) [Semiring α] (N d χ: ℕ) where
   hd : 0 < d
   hχ : 0 < χ
 
-def contract_mps_tensors {α : Type} [Semiring α] {N d χ : ℕ}
+def contract_mps_tensors {α : Type} [Ring α] [StarRing α] {N d χ : ℕ}
   (mps : Finite_MPS α N d χ) (t : Fin N → Fin d) (n : Fin N): Matrix (Fin χ) (Fin χ) α :=
   match n with
   | ⟨0, h0⟩ => (mps.tensors ⟨0, h0⟩).data (t ⟨0, h0⟩)
   | ⟨i+1, hi⟩ => (contract_mps_tensors mps t ⟨i, Nat.lt_of_succ_lt hi⟩) * (mps.tensors ⟨i+1,hi⟩).data (t ⟨i+1, hi⟩)
 
-def get_component {α : Type} [Semiring α] {N d χ : ℕ}
+def get_component {α : Type} [Ring α] [StarRing α] {N d χ : ℕ}
   (mps : Finite_MPS α N d χ) (t : Fin N → Fin d) : α :=
   (mps.boundary_left * (contract_mps_tensors mps t ⟨N-1, Nat.pred_lt (Nat.ne_of_gt mps.hN)⟩) * mps.boundary_right) 0 0
 
+-- Create a Finset of all possible functions from fin N to fin d
+
+def norm_mps {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (mps : Finite_MPS α N d χ) : α :=
+  let all_functions : Finset (Fin N → Fin d) :=  Finset.univ
+  ∑ f ∈ all_functions,  (get_component mps f) * star (get_component mps f)
 
 def aklt_tensor : MPS_tensor ℝ 3 2 :=
 { data := fun
