@@ -78,13 +78,37 @@ def component_index : Fin 2 → Fin 3 :=
 
 def exist_phase {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Prop := ∃ t : α, ∀ (x : (Fin N → Fin d)), (t * star t = 1) ∧ (get_component Amps x) = t * (get_component Bmps x)
 
-def apply_gauge {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (mps : Finite_MPS α N d χ) (fX fY : Fin N → Matrix (Fin χ) (Fin χ) α) : Finite_MPS α N d χ :=
+def apply_gauge {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (mps : Finite_MPS α N d χ) (fX fY : Fin (N+1) → Matrix (Fin χ) (Fin χ) α) : Finite_MPS α N d χ :=
   { tensors := fun i => { data := fun j => fX i * (mps.tensors i).data j * fY i },
-    boundary_left := mps.boundary_left,
-    boundary_right := mps.boundary_right,
+    boundary_left := mps.boundary_left * fY ⟨0, Nat.succ_pos N⟩,
+    boundary_right := fX ⟨N, Nat.lt_succ_self N⟩ * mps.boundary_right,
     hN := mps.hN,
     hd := mps.hd,
     hχ := mps.hχ
   }
 
 axiom eq_MPS {α : Type} [Ring α] [StarRing α] {N d χ : ℕ} (Amps Bmps : Finite_MPS α N d χ) : Amps = Bmps ↔ exist_phase Amps Bmps
+
+theorem MPS_gf_eq {α : Type} [Ring α] [StarRing α] {N d χ : ℕ}
+  (Amps Bmps : Finite_MPS α N d χ) :
+  (∃ (fX fY : Fin (N+1) → Matrix (Fin χ) (Fin χ) α),
+    Bmps = apply_gauge Amps fX fY∧
+    ∀ (n : Fin (N+1)), fY n * fX n = 1) →
+  Amps = Bmps := by
+  intro ⟨fX, fY, h_gauge, h_norm⟩
+  have h_component :  ∀ (x : (Fin N → Fin d)), get_component Amps x = get_component Bmps x := by
+    intro x
+    rw [h_gauge]
+      -- Begin by expanding both sides using the definitions of `get_component` and `apply_gauge`
+    rw [get_component, get_component]
+    -- Expand the right-hand side using the definition of `apply_gauge`
+    rw [apply_gauge]
+    -- This will conclude that both sides are equal
+    simp only [apply_gauge, get_component]
+    have h_contract: contract_mps_tensors Amps x ⟨N-1, Nat.pred_lt (Nat.ne_of_gt Amps.hN)⟩ = fX ⟨0,Nat.succ_pos N⟩ * contract_mps_tensors (apply_gauge Amps fX fY) x ⟨N-1, Nat.pred_lt (Nat.ne_of_gt Amps.hN)⟩ * fY ⟨N, Nat.lt_succ_self N⟩ := by
+      rw [apply_gauge]
+      sorry
+    refl
+  have h_phase : exist_phase (Amps) Bmps := by
+    sorry
+  sorry
